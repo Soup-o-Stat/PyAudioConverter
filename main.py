@@ -1,18 +1,20 @@
 import os
 import shutil
-from tkinter import Tk, Label, Entry, Button, filedialog, messagebox
+from tkinter import Tk, Label, Entry, Button, filedialog, messagebox, StringVar, OptionMenu
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import MP3
 from mutagen.flac import FLAC
 from mutagen.wave import WAVE
 from mutagen.aiff import AIFF
 
-ver="0.0.1"
+ver = "0.0.2"
 
-source_folder_entry=None
-source_format_entry=None
-target_folder_entry=None
-target_format_entry=None
+source_folder_entry = None
+source_format_var = None
+target_folder_entry = None
+target_format_var = None
+
+SUPPORTED_FORMATS = ["mp3", "flac", "wav", "aiff"]
 
 def select_folder(entry_widget):
     folder = filedialog.askdirectory()
@@ -40,11 +42,11 @@ def copy_tags(source_file, target_file, source_format):
     target_audio.save()
 
 def convert_files():
-    global source_folder_entry, source_format_entry, target_folder_entry, target_format_entry
+    global source_folder_entry, source_format_var, target_folder_entry, target_format_var
     source_folder = source_folder_entry.get()
-    source_format = source_format_entry.get().lower()
+    source_format = source_format_var.get().lower()
     target_folder = target_folder_entry.get()
-    target_format = target_format_entry.get().lower()
+    target_format = target_format_var.get().lower()
     if not (source_folder and source_format and target_folder and target_format):
         messagebox.showerror("Error!", "Please select a folder and a format")
         return
@@ -58,30 +60,32 @@ def convert_files():
                 shutil.copy2(source_path, target_path)
                 copy_tags(source_path, target_path, source_format)
             except Exception as e:
-                messagebox.showerror(
-                    "Error!", f"Error with file {filename}:\n{e}")
+                messagebox.showerror("Error!", f"Error with file {filename}:\n{e}")
                 continue
     messagebox.showinfo("Done", "All files have been converted!")
 
 def main():
-    global source_folder_entry, source_format_entry, target_folder_entry, target_format_entry
+    global source_folder_entry, source_format_var, target_folder_entry, target_format_var
+
     root = Tk()
-    root.title("Soupoconverter")
+    root.title("PyAudioConverter")
     root.resizable(False, False)
     Label(root, text="Input folder:").grid(row=0, column=0, sticky="w")
     source_folder_entry = Entry(root, width=40)
     source_folder_entry.grid(row=0, column=1)
     Button(root, text="Choose", command=lambda: select_folder(source_folder_entry)).grid(row=0, column=2)
     Label(root, text="Input files format:").grid(row=1, column=0, sticky="w")
-    source_format_entry = Entry(root, width=40)
-    source_format_entry.grid(row=1, column=1)
+    source_format_var = StringVar(root)
+    source_format_var.set(SUPPORTED_FORMATS[0])  # Default value
+    OptionMenu(root, source_format_var, *SUPPORTED_FORMATS).grid(row=1, column=1)
     Label(root, text="Output folder:").grid(row=2, column=0, sticky="w")
     target_folder_entry = Entry(root, width=40)
     target_folder_entry.grid(row=2, column=1)
     Button(root, text="Choose", command=lambda: select_folder(target_folder_entry)).grid(row=2, column=2)
     Label(root, text="Converted files format:").grid(row=3, column=0, sticky="w")
-    target_format_entry = Entry(root, width=40)
-    target_format_entry.grid(row=3, column=1)
+    target_format_var = StringVar(root)
+    target_format_var.set(SUPPORTED_FORMATS[0])
+    OptionMenu(root, target_format_var, *SUPPORTED_FORMATS).grid(row=3, column=1)
     Button(root, text="Convert", command=convert_files).grid(row=4, column=0, columnspan=3)
     root.mainloop()
 
